@@ -26,6 +26,15 @@ function consultar($pdo,$table) {
   
 }
 
+function consultarId($pdo,$table,$valor) {
+    $query = "SELECT     * FROM       $table WHERE client_id= $valor"; 
+    $consult = $pdo->prepare($query);
+    $a=$consult->execute(array());
+    if (1>$a)echo "InCorrecto3";
+    return ($consult->fetchAll(PDO::FETCH_ASSOC)); 
+  
+}
+
 function creatablaUsuarios($pdo,$table){
 /*CREATE TABLE cliente(
         client_id INT NOT NULL,
