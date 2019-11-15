@@ -33,7 +33,7 @@ function MP_Register_Formchokolandia($MP_user , $user_email)
 {//formulario registro amigos de $user_email
     ?>
     <h1>Gestión de Usuarios </h1>
-    <form class="fom_usuario" action="?action=my_datos&proceso=registrar" method="POST">
+    <form class="fom_usuario" action="?action=my_datos&proceso=registrar" method="POST" enctype="multipart/form-data">
         <label for="clienteMail">Tu correo</label>
         <br/>
         <input type="text" name="clienteMail"  size="20" maxlength="25" value="<?php print $user_email?>"
@@ -50,6 +50,12 @@ function MP_Register_Formchokolandia($MP_user , $user_email)
         <input type="text" name="email" class="item_requerid" size="20" maxlength="25" value="<?php print $MP_user["email"] ?>"
         placeholder="kiko@ic.es" />
         <br/>
+<label for="foto_file">Foto</label>
+<br/>
+<input type="file" id="foto" name="foto" class="item_requerid" value="<?php print $foto ?>" required />
+<br/>
+<br>
+<p> <img id="img_foto" src="" width="100" height="60"></p>
         <input type="submit" value="Enviar">
         <input type="reset" value="Deshacer">
     </form>
@@ -89,8 +95,24 @@ function MP_my_datoschokolandia()
                 print ("No has rellenado el formulario correctamente");
                 return;
             }
-            $query = "INSERT INTO $table (nombre, email,clienteMail) VALUES (?,?,?)";         
-            $a=array($_REQUEST['userName'], $_REQUEST['email'],$_REQUEST['clienteMail'] );
+            
+            
+             $fotoURL="";
+			$fotoURL2="";
+			$IMAGENES_USUARIOS = '/storage/ssd1/126/11109126/public_html/Lab/P1/fotos/';
+			$Base = '/Lab/P1/fotos/';
+			if(array_key_exists('foto', $_FILES) && $_POST['email']) {
+				$fotoURL = $IMAGENES_USUARIOS.$_POST['userName']."_".$_FILES['foto']['name'];
+				$fotoURL2 = $Base.$_POST['userName']."_".$_FILES['foto']['name'];
+				if (move_uploaded_file($_FILES['foto']['tmp_name'], $fotoURL)){ 
+					echo "foto subida con éxito";
+				}
+			}
+			
+	
+            
+            $query = "INSERT INTO $table (nombre, email,foto_file,clienteMail) VALUES (?,?,?,?)";         
+            $a=array($_REQUEST['userName'], $_REQUEST['email'],$fotoURL2,$_REQUEST['clienteMail'] );
             //$pdo1 = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME, DB_USER, DB_PASSWORD); 
             $consult = $MP_pdo->prepare($query);
             $a=$consult->execute($a);
@@ -98,6 +120,50 @@ function MP_my_datoschokolandia()
             else wp_redirect(admin_url( 'admin-post.php?action=my_datos&proceso=listar'));
             break;
         case "listar":
+            ?>
+            <style>
+table.tablaAmigos {
+  font-family: "Proxima Nova", Consola, serif;
+  border: 1px solid #AAAAAA;
+  background-color: yellow;
+  width: 100%;
+  text-align: center;
+  border-collapse: collapse;
+}
+table.tablaAmigos td, table.tablaAmigos th {
+  border: 1px solid green;
+  padding: 4px 2px;
+}
+table.tablaAmigos tbody td {
+  font-size: 15px;
+}
+table.tablaAmigos tr:nth-child(even) {
+  background: PINK;
+}
+table.tablaAmigos th {
+  background: ORANGE;
+  background: -moz-linear-gradient(top, #dde6c0 0%, #d6e1b3 66%, #D2DEAB 100%);
+  background: -webkit-linear-gradient(top, #dde6c0 0%, #d6e1b3 66%, #D2DEAB 100%);
+  background: linear-gradient(to bottom, #dde6c0 0%, #d6e1b3 66%, #D2DEAB 100%);
+  border-bottom: 1px solid #FFFFFF;
+}
+table.tablaAmigos th {
+  font-size: 17px;
+  font-weight: bold;
+  color: #FF00FF;
+  text-align: center;
+  border-left: 0px solid #FFFFFF;
+}
+
+table.tablaAmigos tfoot .links a{
+  display: inline-block;
+  background: GREY;
+  color: #FFFFFF;
+  padding: 2px 8px;
+  border-radius: 7px;
+}
+</style>
+<?php
             //Listado amigos o de todos si se es administrador.
             $a=array();
             if (current_user_can('administrator')) {$query = "SELECT     * FROM       $table ";}
@@ -111,19 +177,24 @@ function MP_my_datoschokolandia()
             $a=$consult->execute($a);
             $rows=$consult->fetchAll(PDO::FETCH_ASSOC);
             if (is_array($rows)) {/* Creamos un listado como una tabla HTML*/
-                print '<div><table><th>';
+                print '<div><table class="tablaAmigos"><tr>';
                 foreach ( array_keys($rows[0])as $key) {
-                    echo "<td>", $key,"</td>";
+                    echo "<th>", $key,"</th>";
                 }
-                print "</th>";
-                foreach ($rows as $row) {
+                print "</tr>";
+                 foreach ($rows as $row) {
                     print "<tr>";
                     foreach ($row as $key => $val) {
-                        echo "<td>", $val, "</td>";
+                        if ($key=="foto_file"){
+							echo "<td>", "<img src='$val' width='100' height='100'>", "</td>";
+						} else {
+							echo "<td>", $val, "</td>";}
+
                     }
                     print "</tr>";
                 }
                 print "</table></div>";
+
             }
             else{echo "No existen valores";}
             break;
